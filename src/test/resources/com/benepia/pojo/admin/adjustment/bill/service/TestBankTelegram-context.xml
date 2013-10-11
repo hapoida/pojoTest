@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+           
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:dwr="http://www.directwebremoting.org/schema/spring-dwr"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans   
+       http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+       http://www.directwebremoting.org/schema/spring-dwr
+       http://www.directwebremoting.org/schema/spring-dwr-2.0.xsd">
+	
+	<bean id="propertyConfigurer"
+	  class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+	  <property name="locations">
+	   <list>
+	    <value>com/benepia/pojo/jdbc.properties</value>
+	   </list>
+	  </property>
+	 </bean>
+	
+	<bean id="pagingService" class="com.benepia.pojo.paging.PagingServiceImpl" />		
+	
+	<bean id="bankTelegramIF" class="com.benepia.admin.adjustment.bill.service.BankTelegramImpl">		
+		<property name="bankTelegramDAO" ref="bankTelegramDAO"></property>
+	</bean>
+	
+	<bean id="bankTelegramDAO" class="com.benepia.admin.adjustment.bill.dao.ibatis.SqlMapBankTelegramDAO4Oracle"
+		p:sqlMapClient-ref="sqlMapClient" />		
+	
+	<bean id="sqlMapClient"
+		class="org.springframework.orm.ibatis.SqlMapClientFactoryBean"
+		p:dataSource-ref="dataSource"
+		p:lobHandler-ref="oracleLobHandler"
+		p:configLocation="/com/benepia/pojo/sql-map-config.xml" />
+	
+	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+		<property name="driverClassName" value="${jdbc.driverClassName}"/>
+		<property name="url" value="${jdbc.url}"/>
+		<property name="username" value="${jdbc.username}"/>
+		<property name="password" value="${jdbc.password}"/>
+	</bean>
+	
+	<!-- Transaction manager for a single JDBC DataSource -->
+	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource"/>
+	</bean>
+	
+	<bean id="baseTransactionProxy" class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean" abstract="true">
+		<property name="transactionManager" ref="transactionManager"/>
+		<property name="proxyTargetClass" value="true"/>
+		<property name="transactionAttributes">
+			<props>
+				<prop key="*">PROPAGATION_REQUIRED</prop>
+			</props>
+		</property>
+	</bean>
+	
+	<!-- SqlMap setup for iBATIS Database Layer -->	
+	<bean id="nativeJdbcExtractor" class="org.springframework.jdbc.support.nativejdbc.SimpleNativeJdbcExtractor" lazy-init="true"/>
+	
+	<bean id="oracleLobHandler" class="org.springframework.jdbc.support.lob.OracleLobHandler" lazy-init="true">
+		<property name="nativeJdbcExtractor" ref="nativeJdbcExtractor"/>
+	</bean>
+</beans>
